@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+IMAGE="${OPENCODE_BOX_IMAGE:-opencode-box}"
+STATE="${OPENCODE_BOX_HOME:-$HOME/.local/share/opencode-box}"
+
+mkdir -p "$STATE/config" "$STATE/data"
+
+if [ "${1:-}" = "shell" ]; then
+	shift
+	set -- bash "$@"
+else
+	set -- opencode "$@"
+fi
+
+exec podman run --rm -it \
+	--userns=keep-id:uid=1000,gid=1000 \
+	--cap-drop=ALL \
+	--security-opt no-new-privileges \
+	-e TERM -e COLORTERM \
+	-v "$PWD:$PWD" -w "$PWD" \
+	-v "$STATE/config:/home/dev/.config/opencode" \
+	-v "$STATE/data:/home/dev/.local/share/opencode" \
+	"$IMAGE" "$@"
